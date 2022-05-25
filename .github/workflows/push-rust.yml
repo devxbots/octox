@@ -63,6 +63,11 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
 
+    env:
+      OCTOX_APP_ID: ${{ secrets.OCTOX_APP_ID }}
+      OCTOX_PRIVATE_KEY: ${{ secrets.OCTOX_PRIVATE_KEY }}
+      OCTOX_WEBHOOK_SECRET: ${{ secrets.OCTOX_WEBHOOK_SECRET }}
+
     outputs:
       collect_coverage: ${{ steps.coverage.outputs.enable }}
 

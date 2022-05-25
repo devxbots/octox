@@ -6,6 +6,8 @@ use octox::{Error, Octox};
 
 #[tokio::test]
 async fn root_returns_ok() -> Result<(), Error> {
+    dotenv::dotenv().ok();
+
     let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
     let addr = listener.local_addr()?;
 
@@ -28,6 +30,8 @@ async fn root_returns_ok() -> Result<(), Error> {
 
 #[tokio::test]
 async fn root_prints_hello_world() -> Result<(), Error> {
+    dotenv::dotenv().ok();
+
     let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
     let addr = listener.local_addr()?;
 
