@@ -1,10 +1,11 @@
-# 📦 Template
+# 📥 octox
 
-_A pre-configured template repository for DEV x BOTS._
+_A tailor-made web framework for GitHub Apps._
 
-This repository is pre-configured with default tooling and configurations for
-the [DEV x BOTS] organization, and it can be used as a template repository to
-quickly bootstrap new projects.
+`octox` is a tailor-made and opinionated web framework to build GitHub Apps. It
+hides the complexity of receiving, verifying, and deserializing incoming
+webhooks. You only need to provide a function that runs your workflow, and
+deploy the project to get started.
 
 ## License
 
