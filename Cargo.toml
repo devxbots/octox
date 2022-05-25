@@ -27,11 +27,15 @@ name = "hello-world"
 
 [dependencies]
 axum = "0.5.6"
+chrono = "0.4.19"
 hyper = "0.14.18"
+jsonwebtoken = "8.1.0"
+reqwest = "0.11.10"
 secrecy = "0.8.0"
+serde = { version = "1.0.137", features = ["derive"] }
 thiserror = "1.0.31"
 
 [dev-dependencies]
 dotenv = "0.15.0"
-reqwest = "0.11.10"
+mockito = "0.31.0"
 tokio = { version = "1.18.2", features = ["macros", "rt-multi-thread"] }
