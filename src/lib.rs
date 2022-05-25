@@ -3,14 +3,15 @@ use std::fs::File;
 use std::io::Read;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Extension, Router, Server};
 
-use crate::routes::health;
+use crate::routes::{health, webhook};
 
 pub use self::error::Error;
 pub use self::github::{AppId, GitHubHost, PrivateKey, WebhookSecret};
 
+mod auth;
 mod error;
 mod github;
 mod routes;
@@ -64,6 +65,7 @@ impl Octox {
 
     pub async fn serve(self) -> Result<(), Error> {
         let app = Router::new()
+            .route("/", post(webhook))
             .route("/health", get(health))
             .layer(self.github_host_extension()?)
             .layer(self.app_id_extension()?)
