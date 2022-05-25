@@ -61,7 +61,8 @@ impl Octox {
 
     pub async fn serve(self) -> Result<(), Error> {
         let app = Router::new()
-            .route("/", get(|| async { "Hello, World!" }))
+            .route("/health", get(health))
+            .layer(self.github_host_extension()?)
             .layer(self.app_id_extension()?)
             .layer(self.private_key_extension()?)
             .layer(self.webhook_secret_extension()?);
@@ -76,6 +77,10 @@ impl Octox {
             .await?;
 
         Ok(())
+    }
+
+    fn github_host_extension(&self) -> Result<Extension<GitHubHost>, Error> {
+        Ok(Extension(self.github_host.clone()))
     }
 
     fn app_id_extension(&self) -> Result<Extension<AppId>, Error> {
