@@ -6,11 +6,14 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 use axum::routing::get;
 use axum::{Extension, Router, Server};
 
+use crate::routes::health;
+
 pub use self::error::Error;
 pub use self::github::{AppId, GitHubHost, PrivateKey, WebhookSecret};
 
 mod error;
 mod github;
+mod routes;
 
 #[derive(Debug)]
 pub struct Octox {
