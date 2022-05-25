@@ -1,0 +1,118 @@
+---
+name: Rust
+
+"on":
+  push:
+    paths:
+      - "**.rs"
+      - "**.toml"
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_TEST_DEBUG: 0
+
+jobs:
+  lint:
+    name: Lint code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy
+
+      - name: Cache build artifacts
+        uses: swatinem/rust-cache@v1.4.0
+
+      - name: Run Clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets --all-features -- -D warnings
+
+  style:
+    name: Check style
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
+
+      - name: Run Rustfmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    outputs:
+      collect_coverage: ${{ steps.coverage.outputs.enable }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Cache build artifacts
+        uses: swatinem/rust-cache@v1.4.0
+
+      - name: Determine whether to measure test coverage
+        id: coverage
+        run: |
+          if [[ "${{ secrets.CODECOV_TOKEN }}" != "" ]]; then
+            echo "Enable collection of test coverage"
+            echo "::set-output name=enable::true"
+          else
+            echo "Run tests without coverage"
+            echo "::set-output name=enable::false"
+          fi
+
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        if: ${{ steps.coverage.outputs.enable != 'true' }}
+        with:
+          command: test
+          args: --verbose
+
+      - name: Run tests with test coverage
+        uses: actions-rs/tarpaulin@master
+        if: ${{ steps.coverage.outputs.enable == 'true' }}
+        with:
+          args: --skip-clean
+          version: 0.20.0
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        if: ${{ steps.coverage.outputs.enable == 'true' }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        if: ${{ steps.coverage.outputs.enable == 'true' }}
+        with:
+          name: code-coverage-report
+          path: cobertura.xml

@@ -1,0 +1,22 @@
+---
+name: JSON
+
+"on":
+  push:
+    paths:
+      - "**.json"
+
+jobs:
+  style:
+    name: Check style
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: prettier
+        uses: creyD/prettier_action@v4.2
+        with:
+          dry: true
+          prettier_options: "--check **/*.json"
