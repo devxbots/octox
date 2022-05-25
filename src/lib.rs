@@ -14,16 +14,22 @@ mod github;
 
 #[derive(Debug)]
 pub struct Octox {
+    github_host: String,
     app_id: Option<AppId>,
     private_key: Option<PrivateKey>,
     webhook_secret: Option<WebhookSecret>,
-    address: SocketAddr,
+    socket_address: SocketAddr,
     tcp_listener: Option<TcpListener>,
 }
 
 impl Octox {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn github_host(mut self, github_host: String) -> Result<Self, Error> {
+        self.github_host = github_host;
+        Ok(self)
     }
 
     pub fn app_id(mut self, app_id: u64) -> Result<Self, Error> {
@@ -41,14 +47,14 @@ impl Octox {
         Ok(self)
     }
 
-    pub fn address(mut self, address: SocketAddr) -> Result<Self, Error> {
-        self.address = address;
+    pub fn socket_address(mut self, address: SocketAddr) -> Result<Self, Error> {
+        self.socket_address = address;
         self.tcp_listener = None;
         Ok(self)
     }
 
-    pub fn listener(mut self, listener: TcpListener) -> Result<Self, Error> {
-        self.address = listener.local_addr()?;
+    pub fn tcp_listener(mut self, listener: TcpListener) -> Result<Self, Error> {
+        self.socket_address = listener.local_addr()?;
         self.tcp_listener = Some(listener);
         Ok(self)
     }
@@ -62,7 +68,7 @@ impl Octox {
 
         let listener = match self.tcp_listener {
             Some(listener) => listener,
-            None => TcpListener::bind(self.address)?,
+            None => TcpListener::bind(self.socket_address)?,
         };
 
         Server::from_tcp(listener)?
@@ -140,11 +146,15 @@ impl Display for Octox {
 
 impl Default for Octox {
     fn default() -> Self {
+        let github_host = "https://api.github.com".into();
+        let socket_address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3000);
+
         Self {
+            github_host,
             app_id: None,
             private_key: None,
             webhook_secret: None,
-            address: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3000),
+            socket_address,
             tcp_listener: None,
         }
     }
@@ -160,7 +170,17 @@ mod tests {
     fn new_returns_default_instance() {
         let octox = Octox::new();
 
-        assert_eq!("127.0.0.1:3000", octox.address.to_string());
+        assert_eq!("127.0.0.1:3000", octox.socket_address.to_string());
+    }
+
+    #[test]
+    fn github_host_sets_github_host() -> Result<(), Error> {
+        let octox = Octox::new();
+
+        let octox = octox.github_host("github_host".into())?;
+
+        assert_eq!("github_host", octox.github_host);
+        Ok(())
     }
 
     #[test]
@@ -197,9 +217,9 @@ mod tests {
     fn address_sets_address() -> Result<(), Error> {
         let octox = Octox::new();
 
-        let octox = octox.address("127.0.0.1:8000".parse::<SocketAddr>().unwrap())?;
+        let octox = octox.socket_address("127.0.0.1:8000".parse::<SocketAddr>().unwrap())?;
 
-        assert_eq!("127.0.0.1:8000", octox.address.to_string());
+        assert_eq!("127.0.0.1:8000", octox.socket_address.to_string());
         Ok(())
     }
 
@@ -207,12 +227,12 @@ mod tests {
     fn address_resets_listener() -> Result<(), Error> {
         let octox = Octox::new();
 
-        let octox = octox.listener(TcpListener::bind(
+        let octox = octox.tcp_listener(TcpListener::bind(
             "0.0.0.0:0".parse::<SocketAddr>().unwrap(),
         )?)?;
-        let octox = octox.address("127.0.0.1:8000".parse::<SocketAddr>().unwrap())?;
+        let octox = octox.socket_address("127.0.0.1:8000".parse::<SocketAddr>().unwrap())?;
 
-        assert_eq!("127.0.0.1:8000", octox.address.to_string());
+        assert_eq!("127.0.0.1:8000", octox.socket_address.to_string());
         assert!(octox.tcp_listener.is_none());
         Ok(())
     }
@@ -224,9 +244,9 @@ mod tests {
         let tcp_listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
         let address = tcp_listener.local_addr()?;
 
-        let octox = octox.listener(tcp_listener)?;
+        let octox = octox.tcp_listener(tcp_listener)?;
 
-        assert_eq!(address, octox.address);
+        assert_eq!(address, octox.socket_address);
         Ok(())
     }
 }

@@ -11,7 +11,7 @@ async fn root_returns_ok() -> Result<(), Error> {
     let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
     let addr = listener.local_addr()?;
 
-    let octox = Octox::new().listener(listener)?;
+    let octox = Octox::new().tcp_listener(listener)?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();
@@ -35,7 +35,7 @@ async fn root_prints_hello_world() -> Result<(), Error> {
     let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
     let addr = listener.local_addr()?;
 
-    let octox = Octox::new().listener(listener)?;
+    let octox = Octox::new().tcp_listener(listener)?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();
