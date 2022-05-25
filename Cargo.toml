@@ -1,0 +1,25 @@
+[package]
+name = "octox"
+version = "0.1.0"
+edition = "2021"
+
+description = "A tailor-made web framework for GitHub Apps"
+repository = "https://github.com/devxbots/octox"
+
+categories = [
+    "development-tools"
+]
+keywords = [
+    "github",
+    "github-app",
+    "web"
+]
+
+# octox is currently in a prototyping phase, during which we won't release it
+# publicly.
+publish = false
+
+# See more keys and their definitions at
+# https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
