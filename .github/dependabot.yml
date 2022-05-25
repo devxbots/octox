@@ -14,3 +14,16 @@ updates:
       - C-dependency
       - L-github
       - R-ignore
+
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - jdno
+    reviewers:
+      - jdno
+    labels:
+      - C-dependency
+      - L-rust
+      - R-ignore
