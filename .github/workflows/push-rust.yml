@@ -31,6 +31,11 @@ jobs:
       - name: Cache build artifacts
         uses: swatinem/rust-cache@v1.4.0
 
+      - name: Cache credentials for private crates
+        run: |
+          git config --global credential.helper store
+          git clone https://jdno:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/devxbots/github-parts
+
       - name: Run Clippy
         uses: actions-rs/cargo@v1
         with:
@@ -94,6 +99,11 @@ jobs:
             echo "Run tests without coverage"
             echo "::set-output name=enable::false"
           fi
+
+      - name: Cache credentials for private crates
+        run: |
+          git config --global credential.helper store
+          git clone https://jdno:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/devxbots/github-parts
 
       - name: Run tests
         uses: actions-rs/cargo@v1
