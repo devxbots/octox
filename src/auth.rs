@@ -5,51 +5,43 @@ use axum::Json;
 use hmac::{Hmac, Mac};
 use serde_json::json;
 use sha2::Sha256;
+use thiserror::Error;
 
 use crate::WebhookSecret;
 
 type HmacSha256 = Hmac<Sha256>;
 
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Error)]
 pub enum AuthError {
+    #[error("missing {0} header")]
     MissingHeader(String),
+    #[error("failed to initialize cryptographic key")]
     FailedHmacInitialization,
+    #[error("X-Hub-Signature-256 header has the wrong format")]
     WrongSignatureFormat,
+    #[error("failed to decode the X-Hub-Signature-256 header")]
     FailedDecodingSignature,
+    #[error("X-Hub-Signature-256 header is invalid")]
     InvalidSignature,
+    #[error("failed to deserialize the body based on the X-GitHub-Event header")]
     UnexpectedPayload,
 }
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
-        let (status, error_message) = match self {
-            AuthError::MissingHeader(header) => (
-                StatusCode::BAD_REQUEST,
-                format!("missing {} header", header),
-            ),
-            AuthError::FailedHmacInitialization => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "failed to initialize cryptographic key".into(),
-            ),
-            AuthError::WrongSignatureFormat => (
-                StatusCode::BAD_REQUEST,
-                "X-Hub-Signature-256 header must start with sha256=".into(),
-            ),
-            AuthError::FailedDecodingSignature => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "failed to decode the X-Hub-Signature-256 header".into(),
-            ),
-            AuthError::InvalidSignature => (
-                StatusCode::UNAUTHORIZED,
-                "X-Hub-Signature-256 header is invalid".into(),
-            ),
-            AuthError::UnexpectedPayload => (
-                StatusCode::BAD_REQUEST,
-                "failed to deserialize the body based of the X-GitHub-Event header".into(),
-            ),
+        let message = self.to_string();
+
+        let status = match self {
+            AuthError::MissingHeader(_) => StatusCode::BAD_REQUEST,
+            AuthError::FailedHmacInitialization => StatusCode::INTERNAL_SERVER_ERROR,
+            AuthError::WrongSignatureFormat => StatusCode::BAD_REQUEST,
+            AuthError::FailedDecodingSignature => StatusCode::INTERNAL_SERVER_ERROR,
+            AuthError::InvalidSignature => StatusCode::UNAUTHORIZED,
+            AuthError::UnexpectedPayload => StatusCode::BAD_REQUEST,
         };
 
         let body = Json(json!({
-            "error": error_message,
+            "error": message,
         }));
 
         (status, body).into_response()

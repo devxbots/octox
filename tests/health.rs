@@ -1,9 +1,14 @@
-use mockito::mock;
 use std::net::{SocketAddr, TcpListener};
+use std::sync::Arc;
 
+use mockito::mock;
 use reqwest::Client;
 
 use octox::{Error, Octox};
+
+use self::workflow::HelloWorld;
+
+mod workflow;
 
 #[tokio::test]
 async fn health_returns_ok() -> Result<(), Error> {
@@ -16,9 +21,10 @@ async fn health_returns_ok() -> Result<(), Error> {
 
     let octox = Octox::new()
         .tcp_listener(listener)?
-        .github_host(mockito::server_url())?
         .app_id(1)?
-        .private_key(include_str!("fixtures/private-key.pem"))?;
+        .github_host(mockito::server_url())?
+        .private_key(include_str!("fixtures/private-key.pem"))?
+        .workflow(Arc::new(HelloWorld))?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();
@@ -46,7 +52,8 @@ async fn health_returns_error() -> Result<(), Error> {
 
     let octox = Octox::new()
         .tcp_listener(listener)?
-        .github_host(mockito::server_url())?;
+        .github_host(mockito::server_url())?
+        .workflow(Arc::new(HelloWorld))?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();

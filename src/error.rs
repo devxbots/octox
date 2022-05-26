@@ -2,10 +2,15 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use thiserror::Error;
 
+use crate::auth::AuthError;
+use crate::workflow::WorkflowError;
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("failed to call external API")]
     Api(#[from] reqwest::Error),
+    #[error(transparent)]
+    Auth(#[from] AuthError),
     #[error("failed to initialize the web framework")]
     Axum(#[from] hyper::Error),
     #[error("{0}")]
@@ -14,6 +19,8 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("failed to create JWT")]
     Jwt(#[from] jsonwebtoken::errors::Error),
+    #[error(transparent)]
+    Workflow(#[from] WorkflowError),
     #[error("{0}")]
     Unknown(String),
 }
