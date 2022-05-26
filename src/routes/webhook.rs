@@ -1,23 +1,31 @@
+use std::sync::Arc;
+
 use axum::body::Bytes;
-use axum::http::{HeaderMap, StatusCode};
-use axum::Extension;
+use axum::http::HeaderMap;
+use axum::{Extension, Json};
 use github_parts::event::Event;
+use serde_json::Value;
 
 use crate::auth::{verify_signature, AuthError};
-use crate::WebhookSecret;
+use crate::error::Error;
+use crate::github::WebhookSecret;
+use crate::workflow::Workflow;
 
 pub async fn webhook(
     headers: HeaderMap,
     body: Bytes,
     Extension(webhook_secret): Extension<WebhookSecret>,
-) -> Result<StatusCode, AuthError> {
+    Extension(workflow): Extension<Arc<dyn Workflow>>,
+) -> Result<Json<Value>, Error> {
     let signature = get_signature(&headers)?;
     verify_signature(&body, &signature, &webhook_secret)?;
 
     let event_type = get_event(&headers)?;
-    let _event = deserialize_event(&event_type, &body)?;
+    let event = deserialize_event(&event_type, &body)?;
 
-    Ok(StatusCode::OK)
+    let body = workflow.process(event)?;
+
+    Ok(Json(body))
 }
 
 fn get_signature(headers: &HeaderMap) -> Result<String, AuthError> {

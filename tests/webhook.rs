@@ -1,8 +1,14 @@
-use reqwest::Client;
 use std::fs::read;
 use std::net::{SocketAddr, TcpListener};
+use std::sync::Arc;
+
+use reqwest::Client;
 
 use octox::{Error, Octox};
+
+use self::workflow::HelloWorld;
+
+mod workflow;
 
 #[tokio::test]
 async fn webhook_accepts_valid_signature() -> Result<(), Error> {
@@ -14,7 +20,8 @@ async fn webhook_accepts_valid_signature() -> Result<(), Error> {
     let octox = Octox::new()
         .tcp_listener(listener)?
         .github_host(mockito::server_url())?
-        .webhook_secret("secret")?;
+        .webhook_secret("secret")?
+        .workflow(Arc::new(HelloWorld))?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();
@@ -37,7 +44,10 @@ async fn webhook_accepts_valid_signature() -> Result<(), Error> {
         .send()
         .await?;
 
-    assert_eq!("", response.text().await.unwrap());
+    assert_eq!(
+        "\"received unsupported event\"",
+        response.text().await.unwrap()
+    );
     Ok(())
 }
 
@@ -51,7 +61,8 @@ async fn webhook_requires_signature() -> Result<(), Error> {
     let octox = Octox::new()
         .tcp_listener(listener)?
         .github_host(mockito::server_url())?
-        .webhook_secret("secret")?;
+        .webhook_secret("secret")?
+        .workflow(Arc::new(HelloWorld))?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();
@@ -87,7 +98,8 @@ async fn webhook_rejects_invalid_signature() -> Result<(), Error> {
     let octox = Octox::new()
         .tcp_listener(listener)?
         .github_host(mockito::server_url())?
-        .webhook_secret("secret")?;
+        .webhook_secret("secret")?
+        .workflow(Arc::new(HelloWorld))?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();

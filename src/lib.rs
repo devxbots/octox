@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::Read;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
+use std::sync::Arc;
 
 use axum::routing::{get, post};
 use axum::{Extension, Router, Server};
@@ -10,11 +11,13 @@ use crate::routes::{health, webhook};
 
 pub use self::error::Error;
 pub use self::github::{AppId, GitHubHost, PrivateKey, WebhookSecret};
+pub use self::workflow::{Workflow, WorkflowError};
 
 mod auth;
 mod error;
 mod github;
 mod routes;
+mod workflow;
 
 #[derive(Debug)]
 pub struct Octox {
@@ -24,11 +27,17 @@ pub struct Octox {
     webhook_secret: Option<WebhookSecret>,
     socket_address: SocketAddr,
     tcp_listener: Option<TcpListener>,
+    workflow: Option<Arc<dyn Workflow>>,
 }
 
 impl Octox {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn workflow(mut self, workflow: Arc<dyn Workflow>) -> Result<Self, Error> {
+        self.workflow = Some(workflow);
+        Ok(self)
     }
 
     pub fn github_host(mut self, github_host: String) -> Result<Self, Error> {
@@ -67,6 +76,7 @@ impl Octox {
         let app = Router::new()
             .route("/", post(webhook))
             .route("/health", get(health))
+            .layer(self.workflow_extension()?)
             .layer(self.github_host_extension()?)
             .layer(self.app_id_extension()?)
             .layer(self.private_key_extension()?)
@@ -82,6 +92,14 @@ impl Octox {
             .await?;
 
         Ok(())
+    }
+
+    fn workflow_extension(&self) -> Result<Extension<Arc<dyn Workflow>>, Error> {
+        if let Some(workflow) = &self.workflow {
+            return Ok(Extension(workflow.clone()));
+        }
+
+        Err(Error::Configuration("workflow must be set".into()))
     }
 
     fn github_host_extension(&self) -> Result<Extension<GitHubHost>, Error> {
@@ -166,6 +184,7 @@ impl Default for Octox {
             webhook_secret: None,
             socket_address,
             tcp_listener: None,
+            workflow: None,
         }
     }
 }
