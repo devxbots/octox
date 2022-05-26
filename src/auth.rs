@@ -16,6 +16,7 @@ pub enum AuthError {
     WrongSignatureFormat,
     FailedDecodingSignature,
     InvalidSignature,
+    UnexpectedPayload,
 }
 
 impl IntoResponse for AuthError {
@@ -40,6 +41,10 @@ impl IntoResponse for AuthError {
             AuthError::InvalidSignature => (
                 StatusCode::UNAUTHORIZED,
                 "X-Hub-Signature-256 header is invalid".into(),
+            ),
+            AuthError::UnexpectedPayload => (
+                StatusCode::BAD_REQUEST,
+                "failed to deserialize the body based of the X-GitHub-Event header".into(),
             ),
         };
 
