@@ -11,6 +11,7 @@ use crate::error::Error;
 use crate::github::WebhookSecret;
 use crate::workflow::Workflow;
 
+#[tracing::instrument(skip(body))]
 pub async fn webhook(
     headers: HeaderMap,
     body: Bytes,
@@ -28,14 +29,17 @@ pub async fn webhook(
     Ok(Json(body))
 }
 
+#[tracing::instrument]
 fn get_signature(headers: &HeaderMap) -> Result<String, AuthError> {
     get_header(headers, "X-Hub-Signature-256")
 }
 
+#[tracing::instrument]
 fn get_event(headers: &HeaderMap) -> Result<String, AuthError> {
     get_header(headers, "X-GitHub-Event")
 }
 
+#[tracing::instrument]
 fn get_header(headers: &HeaderMap, header: &str) -> Result<String, AuthError> {
     headers
         .get(header)
@@ -44,6 +48,7 @@ fn get_header(headers: &HeaderMap, header: &str) -> Result<String, AuthError> {
         .ok_or_else(|| AuthError::MissingHeader(header.into()))
 }
 
+#[tracing::instrument(skip(body))]
 fn deserialize_event(_event_type: &str, body: &Bytes) -> Result<Event, AuthError> {
     let event =
         Event::Unsupported(serde_json::from_slice(body).map_err(|_| AuthError::UnexpectedPayload)?);

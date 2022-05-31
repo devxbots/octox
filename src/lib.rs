@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use axum::routing::{get, post};
 use axum::{Extension, Router, Server};
+use tower_http::trace::TraceLayer;
 
 use crate::routes::{health, webhook};
 
@@ -76,6 +77,7 @@ impl Octox {
         let app = Router::new()
             .route("/", post(webhook))
             .route("/health", get(health))
+            .layer(TraceLayer::new_for_http())
             .layer(self.workflow_extension()?)
             .layer(self.github_host_extension()?)
             .layer(self.app_id_extension()?)

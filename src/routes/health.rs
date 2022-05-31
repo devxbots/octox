@@ -19,6 +19,7 @@ struct Claims {
     exp: i64,
 }
 
+#[tracing::instrument]
 pub async fn health(
     Extension(github_host): Extension<GitHubHost>,
     Extension(app_id): Extension<AppId>,
@@ -37,6 +38,7 @@ pub async fn health(
     (status_code, Json(Health { github }))
 }
 
+#[tracing::instrument]
 async fn check_github(
     github_host: &GitHubHost,
     app_id: &AppId,
@@ -61,6 +63,7 @@ async fn check_github(
     }
 }
 
+#[tracing::instrument]
 fn new_app_token(app_id: &AppId, private_key: &PrivateKey) -> Result<String, Error> {
     let now = Utc::now();
 
