@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use github_parts::event::Event;
 use serde_json::Value;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 use octox::{Error, Octox, Workflow, WorkflowError};
 
@@ -21,6 +23,14 @@ impl Workflow for HelloWorld {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     dotenv::dotenv().ok();
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG")
+                .unwrap_or_else(|_| "hello_world=debug,tower_http=debug".into()),
+        ))
+        .with(tracing_subscriber::fmt::layer())
+        .init();
 
     let octox = Octox::new().workflow(Arc::new(HelloWorld))?;
     octox.serve().await
