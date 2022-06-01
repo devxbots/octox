@@ -19,6 +19,8 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("failed to create JWT")]
     Jwt(#[from] jsonwebtoken::errors::Error),
+    #[error("{0}")]
+    Payload(#[from] serde_json::Error),
     #[error(transparent)]
     Workflow(#[from] WorkflowError),
     #[error("{0}")]

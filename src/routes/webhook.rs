@@ -49,9 +49,11 @@ fn get_header(headers: &HeaderMap, header: &str) -> Result<String, AuthError> {
 }
 
 #[tracing::instrument(skip(body))]
-fn deserialize_event(_event_type: &str, body: &Bytes) -> Result<Event, AuthError> {
-    let event =
-        Event::Unsupported(serde_json::from_slice(body).map_err(|_| AuthError::UnexpectedPayload)?);
+fn deserialize_event(event_type: &str, body: &Bytes) -> Result<Event, Error> {
+    let event = match event_type {
+        "check_run" => Event::CheckRun(serde_json::from_slice(body)?),
+        _ => Event::Unsupported(serde_json::from_slice(body)?),
+    };
 
     Ok(event)
 }
