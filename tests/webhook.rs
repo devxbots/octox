@@ -35,10 +35,10 @@ async fn webhook_accepts_valid_signature() -> Result<(), Error> {
 
     let response = Client::new()
         .post(format!("http://{}/", addr))
-        .header("X-GitHub-Event", "check_run")
+        .header("X-GitHub-Event", "not_a_real_event")
         .header(
             "X-Hub-Signature-256",
-            "sha256=0ee69dc1afb2d6fd5d09d0163b36c228c3db01dfec1f31c59944938a0bfb4502",
+            "sha256=ba9f77aa6bc9740e9be7f68e4e21a64821cc5b59fd286d409d605a0b8affe7ff",
         )
         .body(body)
         .send()
