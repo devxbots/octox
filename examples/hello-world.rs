@@ -1,10 +1,11 @@
 use async_trait::async_trait;
 use github_parts::event::Event;
+use github_parts::github::{AppId, GitHubHost, PrivateKey};
 use serde_json::Value;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use octox::{AppId, Error, GitHubHost, Octox, PrivateKey, Workflow, WorkflowError};
+use octox::{Error, Octox, Workflow, WorkflowError};
 
 #[derive(Debug)]
 struct HelloWorld;

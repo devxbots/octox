@@ -4,11 +4,11 @@ use axum::body::Bytes;
 use axum::http::HeaderMap;
 use axum::{Extension, Json};
 use github_parts::event::Event;
+use github_parts::github::WebhookSecret;
 use serde_json::Value;
 
 use crate::auth::{verify_signature, AuthError};
 use crate::error::Error;
-use crate::github::WebhookSecret;
 use crate::workflow::Workflow;
 
 #[tracing::instrument(skip(body))]
