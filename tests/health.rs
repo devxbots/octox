@@ -15,7 +15,7 @@ async fn health_returns_ok() -> Result<(), Error> {
 
     let _mock = mock("GET", "/app").with_status(200).create();
 
-    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
+    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     let octox = Octox::new()
@@ -46,7 +46,7 @@ async fn health_returns_error() -> Result<(), Error> {
 
     let _mock = mock("GET", "/app").with_status(401).create();
 
-    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
+    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     let octox = Octox::new()
