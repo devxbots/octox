@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use github_parts::event::Event;
 use serde_json::Value;
 use tracing_subscriber::layer::SubscriberExt;
@@ -10,8 +11,9 @@ use octox::{Error, Octox, Workflow, WorkflowError};
 #[derive(Debug)]
 struct HelloWorld;
 
+#[async_trait]
 impl Workflow for HelloWorld {
-    fn process(&self, event: Event) -> Result<Value, WorkflowError> {
+    async fn process(&self, event: Event) -> Result<Value, WorkflowError> {
         let body = format!("received {}", event).into();
 
         println!("{}", &body);
