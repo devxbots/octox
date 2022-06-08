@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use github_parts::event::Event;
+use github_parts::github::{AppId, GitHubHost, PrivateKey};
 use serde_json::Value;
 
-use octox::{AppId, GitHubHost, PrivateKey, Workflow, WorkflowError};
+use octox::{Workflow, WorkflowError};
 
 #[derive(Debug)]
 pub struct HelloWorld;

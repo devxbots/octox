@@ -7,17 +7,16 @@ use std::sync::Arc;
 
 use axum::routing::{get, post};
 use axum::{Extension, Router, Server};
+use github_parts::github::{AppId, GitHubHost, PrivateKey, WebhookSecret};
 use tower_http::trace::TraceLayer;
 
 use crate::routes::{health, webhook};
 
 pub use self::error::Error;
-pub use self::github::{AppId, GitHubHost, PrivateKey, WebhookSecret};
 pub use self::workflow::{Workflow, WorkflowError};
 
 mod auth;
 mod error;
-mod github;
 mod routes;
 mod workflow;
 
