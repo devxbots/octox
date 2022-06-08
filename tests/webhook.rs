@@ -1,6 +1,5 @@
 use std::fs::read;
 use std::net::{SocketAddr, TcpListener};
-use std::sync::Arc;
 
 use reqwest::Client;
 
@@ -21,7 +20,7 @@ async fn webhook_accepts_valid_signature() -> Result<(), Error> {
         .tcp_listener(listener)?
         .github_host(mockito::server_url())?
         .webhook_secret("secret")?
-        .workflow(Arc::new(HelloWorld))?;
+        .workflow(HelloWorld::constructor)?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();
@@ -62,7 +61,7 @@ async fn webhook_requires_signature() -> Result<(), Error> {
         .tcp_listener(listener)?
         .github_host(mockito::server_url())?
         .webhook_secret("secret")?
-        .workflow(Arc::new(HelloWorld))?;
+        .workflow(HelloWorld::constructor)?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();
@@ -99,7 +98,7 @@ async fn webhook_rejects_invalid_signature() -> Result<(), Error> {
         .tcp_listener(listener)?
         .github_host(mockito::server_url())?
         .webhook_secret("secret")?
-        .workflow(Arc::new(HelloWorld))?;
+        .workflow(HelloWorld::constructor)?;
 
     tokio::spawn(async move {
         octox.serve().await.unwrap();

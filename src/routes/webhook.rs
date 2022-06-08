@@ -16,7 +16,7 @@ pub async fn webhook(
     headers: HeaderMap,
     body: Bytes,
     Extension(webhook_secret): Extension<WebhookSecret>,
-    Extension(workflow): Extension<Arc<dyn Workflow>>,
+    Extension(workflow): Extension<Arc<Box<dyn Workflow>>>,
 ) -> Result<Json<Value>, Error> {
     let signature = get_signature(&headers)?;
     verify_signature(&body, &signature, &webhook_secret)?;
