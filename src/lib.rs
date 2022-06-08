@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::Read;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
+use std::ops::Deref;
 use std::sync::Arc;
 
 use axum::routing::{get, post};
@@ -20,6 +21,8 @@ mod github;
 mod routes;
 mod workflow;
 
+type WorkflowConstructor = fn(GitHubHost, AppId, PrivateKey) -> Box<dyn Workflow>;
+
 #[derive(Debug)]
 pub struct Octox {
     github_host: GitHubHost,
@@ -28,7 +31,7 @@ pub struct Octox {
     webhook_secret: Option<WebhookSecret>,
     socket_address: SocketAddr,
     tcp_listener: Option<TcpListener>,
-    workflow: Option<Arc<dyn Workflow>>,
+    workflow: Option<WorkflowConstructor>,
 }
 
 impl Octox {
@@ -36,7 +39,7 @@ impl Octox {
         Self::default()
     }
 
-    pub fn workflow(mut self, workflow: Arc<dyn Workflow>) -> Result<Self, Error> {
+    pub fn workflow(mut self, workflow: WorkflowConstructor) -> Result<Self, Error> {
         self.workflow = Some(workflow);
         Ok(self)
     }
@@ -78,11 +81,11 @@ impl Octox {
             .route("/", post(webhook))
             .route("/health", get(health))
             .layer(TraceLayer::new_for_http())
-            .layer(self.workflow_extension()?)
             .layer(self.github_host_extension()?)
             .layer(self.app_id_extension()?)
             .layer(self.private_key_extension()?)
-            .layer(self.webhook_secret_extension()?);
+            .layer(self.webhook_secret_extension()?)
+            .layer(self.workflow_extension()?);
 
         let listener = match self.tcp_listener {
             Some(listener) => listener,
@@ -96,9 +99,16 @@ impl Octox {
         Ok(())
     }
 
-    fn workflow_extension(&self) -> Result<Extension<Arc<dyn Workflow>>, Error> {
+    fn workflow_extension(&self) -> Result<Extension<Arc<Box<dyn Workflow>>>, Error> {
         if let Some(workflow) = &self.workflow {
-            return Ok(Extension(workflow.clone()));
+            let github_host = self.github_host.clone();
+            let app_id = self.try_app_id()?;
+            let private_key = self.try_private_key()?;
+
+            let constructor = workflow.deref();
+            let workflow = constructor(github_host, app_id, private_key);
+
+            return Ok(Extension(Arc::new(workflow)));
         }
 
         Err(Error::Configuration("workflow must be set".into()))
@@ -109,48 +119,13 @@ impl Octox {
     }
 
     fn app_id_extension(&self) -> Result<Extension<AppId>, Error> {
-        if let Some(app_id) = self.app_id {
-            return Ok(Extension(app_id));
-        }
-
-        let app_id_from_env = match std::env::var("OCTOX_APP_ID") {
-            Ok(app_id) => app_id,
-            Err(_) => {
-                return Err(Error::Configuration(
-                    "app id must be set either manually or as an environment variable".into(),
-                ))
-            }
-        };
-
-        if let Ok(app_id) = app_id_from_env.parse::<u64>() {
-            return Ok(Extension(AppId::new(app_id)));
-        }
-
-        Err(Error::Configuration("app id must be a number".into()))
+        let app_id = self.try_app_id()?;
+        Ok(Extension(app_id))
     }
 
     fn private_key_extension(&self) -> Result<Extension<PrivateKey>, Error> {
-        if let Some(private_key) = &self.private_key {
-            return Ok(Extension(private_key.clone()));
-        }
-
-        if let Ok(private_key) = std::env::var("OCTOX_PRIVATE_KEY") {
-            return Ok(Extension(PrivateKey::new(private_key)));
-        };
-
-        let private_key_path = match std::env::var("OCTOX_PRIVATE_KEY_PATH") {
-            Ok(path) => path,
-            Err(_) => {
-                return Err(Error::Configuration(
-                    "private key must be set either manually or as an environment variable".into(),
-                ))
-            }
-        };
-
-        let mut private_key = String::new();
-        File::open(private_key_path)?.read_to_string(&mut private_key)?;
-
-        Ok(Extension(PrivateKey::new(private_key)))
+        let private_key = self.try_private_key()?;
+        Ok(Extension(private_key))
     }
 
     fn webhook_secret_extension(&self) -> Result<Extension<WebhookSecret>, Error> {
@@ -165,6 +140,51 @@ impl Octox {
         Err(Error::Configuration(
             "webhook secret must be set either manually or as an environment variable".into(),
         ))
+    }
+
+    fn try_app_id(&self) -> Result<AppId, Error> {
+        if let Some(app_id) = self.app_id {
+            return Ok(app_id);
+        }
+
+        let app_id_from_env = match std::env::var("OCTOX_APP_ID") {
+            Ok(app_id) => app_id,
+            Err(_) => {
+                return Err(Error::Configuration(
+                    "app id must be set either manually or as an environment variable".into(),
+                ))
+            }
+        };
+
+        if let Ok(app_id) = app_id_from_env.parse::<u64>() {
+            return Ok(AppId::new(app_id));
+        }
+
+        Err(Error::Configuration("app id must be a number".into()))
+    }
+
+    fn try_private_key(&self) -> Result<PrivateKey, Error> {
+        if let Some(private_key) = &self.private_key {
+            return Ok(private_key.clone());
+        }
+
+        if let Ok(private_key) = std::env::var("OCTOX_PRIVATE_KEY") {
+            return Ok(PrivateKey::new(private_key));
+        };
+
+        let private_key_path = match std::env::var("OCTOX_PRIVATE_KEY_PATH") {
+            Ok(path) => path,
+            Err(_) => {
+                return Err(Error::Configuration(
+                    "private key must be set either manually or as an environment variable".into(),
+                ))
+            }
+        };
+
+        let mut private_key = String::new();
+        File::open(private_key_path)?.read_to_string(&mut private_key)?;
+
+        Ok(PrivateKey::new(private_key))
     }
 }
 
