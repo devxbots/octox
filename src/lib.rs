@@ -5,6 +5,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 use std::ops::Deref;
 use std::sync::Arc;
 
+use anyhow::Context;
 use axum::routing::{get, post};
 use axum::{Extension, Router, Server};
 use github_parts::github::{AppId, GitHubHost, PrivateKey, WebhookSecret};
@@ -70,8 +71,12 @@ impl Octox {
     }
 
     pub fn tcp_listener(mut self, listener: TcpListener) -> Result<Self, Error> {
-        self.socket_address = listener.local_addr()?;
+        self.socket_address = listener
+            .local_addr()
+            .context("failed to get socket address from TCP listener")?;
+
         self.tcp_listener = Some(listener);
+
         Ok(self)
     }
 
@@ -88,12 +93,16 @@ impl Octox {
 
         let listener = match self.tcp_listener {
             Some(listener) => listener,
-            None => TcpListener::bind(self.socket_address)?,
+            None => {
+                TcpListener::bind(self.socket_address).context("failed to bind socket address")?
+            }
         };
 
-        Server::from_tcp(listener)?
+        Server::from_tcp(listener)
+            .context("failed to create HTTP server from TCP listener")?
             .serve(app.into_make_service())
-            .await?;
+            .await
+            .context("failed to start HTTP server")?;
 
         Ok(())
     }
@@ -181,7 +190,10 @@ impl Octox {
         };
 
         let mut private_key = String::new();
-        File::open(private_key_path)?.read_to_string(&mut private_key)?;
+        File::open(private_key_path)
+            .context("failed to open private key")?
+            .read_to_string(&mut private_key)
+            .context("failed to read private key")?;
 
         Ok(PrivateKey::new(private_key))
     }
@@ -277,9 +289,8 @@ mod tests {
     fn address_resets_listener() -> Result<(), Error> {
         let octox = Octox::new();
 
-        let octox = octox.tcp_listener(TcpListener::bind(
-            "0.0.0.0:0".parse::<SocketAddr>().unwrap(),
-        )?)?;
+        let octox = octox
+            .tcp_listener(TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap())?;
         let octox = octox.socket_address("127.0.0.1:8000".parse::<SocketAddr>().unwrap())?;
 
         assert_eq!("127.0.0.1:8000", octox.socket_address.to_string());
@@ -291,8 +302,8 @@ mod tests {
     fn listener_resets_address() -> Result<(), Error> {
         let octox = Octox::new();
 
-        let tcp_listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
-        let address = tcp_listener.local_addr()?;
+        let tcp_listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap();
+        let address = tcp_listener.local_addr().unwrap();
 
         let octox = octox.tcp_listener(tcp_listener)?;
 

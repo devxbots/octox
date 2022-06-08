@@ -13,7 +13,7 @@ mod workflow;
 async fn webhook_accepts_valid_signature() -> Result<(), Error> {
     dotenv::dotenv().ok();
 
-    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
+    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     let octox = Octox::new()
@@ -54,7 +54,7 @@ async fn webhook_accepts_valid_signature() -> Result<(), Error> {
 async fn webhook_requires_signature() -> Result<(), Error> {
     dotenv::dotenv().ok();
 
-    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
+    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     let octox = Octox::new()
@@ -79,6 +79,8 @@ async fn webhook_requires_signature() -> Result<(), Error> {
         .send()
         .await?;
 
+    assert_eq!(400, response.status().as_u16());
+
     assert!(response
         .text()
         .await
@@ -91,7 +93,7 @@ async fn webhook_requires_signature() -> Result<(), Error> {
 async fn webhook_rejects_invalid_signature() -> Result<(), Error> {
     dotenv::dotenv().ok();
 
-    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())?;
+    let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     let octox = Octox::new()
@@ -119,6 +121,8 @@ async fn webhook_rejects_invalid_signature() -> Result<(), Error> {
         .body(body)
         .send()
         .await?;
+
+    assert_eq!(401, response.status().as_u16());
 
     assert!(response
         .text()

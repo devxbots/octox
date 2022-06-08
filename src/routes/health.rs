@@ -51,7 +51,7 @@ async fn check_github(
                 github_parts::error::Error::Configuration(_, message) => {
                     Err(Error::Configuration(message))
                 }
-                _ => Err(Error::Unknown("failed to create GitHub App token".into())),
+                _ => Err(Error::UnexpectedError(error.into())),
             }
         }
     };
@@ -68,6 +68,6 @@ async fn check_github(
         Ok(())
     } else {
         let text = response.text().await?;
-        Err(Error::Unknown(text))
+        Err(Error::UnexpectedError(anyhow::Error::msg(text)))
     }
 }

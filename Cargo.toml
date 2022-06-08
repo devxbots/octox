@@ -44,6 +44,7 @@ thiserror = "1.0.31"
 tower-http = { version = "0.3.3", features = ["trace"] }
 tracing = "0.1.34"
 async-trait = "0.1.56"
+anyhow = "1.0.57"
 
 [dev-dependencies]
 dotenv = "0.15.0"
