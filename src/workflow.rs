@@ -1,12 +1,14 @@
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
 use std::fmt::Debug;
 
+use async_trait::async_trait;
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
 use github_parts::event::Event;
 use thiserror::Error;
 
+#[async_trait]
 pub trait Workflow: Debug + Sync + Send {
-    fn process(&self, event: Event) -> Result<serde_json::Value, WorkflowError>;
+    async fn process(&self, event: Event) -> Result<serde_json::Value, WorkflowError>;
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Error)]
