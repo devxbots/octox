@@ -9,6 +9,7 @@ use anyhow::Context;
 use axum::routing::{get, post};
 use axum::{Extension, Router, Server};
 use github_parts::github::{AppId, GitHubHost, PrivateKey, WebhookSecret};
+use sentry_tower::{NewSentryLayer, SentryHttpLayer};
 use tower_http::trace::TraceLayer;
 
 use crate::routes::{health, webhook};
@@ -85,6 +86,8 @@ impl Octox {
             .route("/", post(webhook))
             .route("/health", get(health))
             .layer(TraceLayer::new_for_http())
+            .layer(NewSentryLayer::new_from_top())
+            .layer(SentryHttpLayer::with_transaction())
             .layer(self.github_host_extension()?)
             .layer(self.app_id_extension()?)
             .layer(self.private_key_extension()?)
