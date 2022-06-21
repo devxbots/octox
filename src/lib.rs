@@ -8,7 +8,9 @@ use std::sync::Arc;
 use anyhow::Context;
 use axum::routing::{get, post};
 use axum::{Extension, Router, Server};
+use github_parts::github::token::TokenFactory;
 use github_parts::github::{AppId, GitHubHost, PrivateKey, WebhookSecret};
+use parking_lot::Mutex;
 use sentry_tower::{NewSentryLayer, SentryHttpLayer};
 use tower_http::trace::TraceLayer;
 
@@ -22,6 +24,7 @@ mod error;
 mod routes;
 mod workflow;
 
+type SharedTokenFactory = Arc<Mutex<TokenFactory>>;
 type WorkflowConstructor = fn(GitHubHost, AppId, PrivateKey) -> Box<dyn Workflow>;
 
 #[derive(Debug)]
@@ -89,8 +92,7 @@ impl Octox {
             .layer(NewSentryLayer::new_from_top())
             .layer(SentryHttpLayer::with_transaction())
             .layer(self.github_host_extension()?)
-            .layer(self.app_id_extension()?)
-            .layer(self.private_key_extension()?)
+            .layer(self.token_factory_extension()?)
             .layer(self.webhook_secret_extension()?)
             .layer(self.workflow_extension()?);
 
@@ -129,14 +131,15 @@ impl Octox {
         Ok(Extension(self.github_host.clone()))
     }
 
-    fn app_id_extension(&self) -> Result<Extension<AppId>, Error> {
+    fn token_factory_extension(&self) -> Result<Extension<SharedTokenFactory>, Error> {
+        let github_host = self.github_host.clone();
         let app_id = self.try_app_id()?;
-        Ok(Extension(app_id))
-    }
-
-    fn private_key_extension(&self) -> Result<Extension<PrivateKey>, Error> {
         let private_key = self.try_private_key()?;
-        Ok(Extension(private_key))
+
+        let factory = TokenFactory::new(github_host, app_id, private_key);
+        let shared_factory = Arc::new(Mutex::new(factory));
+
+        Ok(Extension(shared_factory))
     }
 
     fn webhook_secret_extension(&self) -> Result<Extension<WebhookSecret>, Error> {
