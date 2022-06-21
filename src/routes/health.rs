@@ -1,10 +1,13 @@
+use std::sync::Arc;
+
 use axum::http::StatusCode;
 use axum::{Extension, Json};
-use github_parts::github::token::AppToken;
+use github_parts::github::token::TokenFactory;
+use parking_lot::Mutex;
 use reqwest::Client;
 use serde::Serialize;
 
-use crate::{AppId, Error, GitHubHost, PrivateKey};
+use crate::{Error, GitHubHost, SharedTokenFactory};
 
 #[derive(Debug, Serialize)]
 pub struct Health {
@@ -20,13 +23,12 @@ struct Claims {
 
 #[tracing::instrument]
 pub async fn health(
+    Extension(token_factory): Extension<SharedTokenFactory>,
     Extension(github_host): Extension<GitHubHost>,
-    Extension(app_id): Extension<AppId>,
-    Extension(private_key): Extension<PrivateKey>,
 ) -> (StatusCode, Json<Health>) {
     let mut status_code = StatusCode::OK;
 
-    let github = match check_github(&github_host, &app_id, &private_key).await {
+    let github = match check_github(&token_factory, &github_host).await {
         Ok(_) => "ok".into(),
         Err(error) => {
             status_code = StatusCode::INTERNAL_SERVER_ERROR;
@@ -39,12 +41,12 @@ pub async fn health(
 
 #[tracing::instrument]
 async fn check_github(
+    token_factory: &Arc<Mutex<TokenFactory>>,
     github_host: &GitHubHost,
-    app_id: &AppId,
-    private_key: &PrivateKey,
 ) -> Result<(), Error> {
     let endpoint = format!("{}/app", github_host.get());
-    let token = match AppToken::new(app_id, private_key) {
+
+    let token = match token_factory.lock().app() {
         Ok(token) => token,
         Err(error) => {
             return match error {

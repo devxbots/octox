@@ -29,12 +29,15 @@ name = "hello-world"
 [dependencies]
 github-parts = { git = "https://github.com/devxbots/github-parts", tag = "v0.7.1" }
 
+anyhow = "1.0.57"
+async-trait = "0.1.56"
 axum = "0.5.6"
 chrono = "0.4.19"
 hex = "0.4.3"
 hmac = "0.12.1"
 hyper = "0.14.18"
 jsonwebtoken = "8.1.0"
+parking_lot = "0.12.1"
 reqwest = "0.11.10"
 secrecy = "0.8.0"
 sentry-tower = { version = "0.27.0", features = ["http"] }
@@ -44,8 +47,6 @@ sha2 = "0.10.2"
 thiserror = "1.0.31"
 tower-http = { version = "0.3.3", features = ["trace"] }
 tracing = "0.1.34"
-async-trait = "0.1.56"
-anyhow = "1.0.57"
 
 [dev-dependencies]
 dotenv = "0.15.0"
