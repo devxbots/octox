@@ -17,11 +17,13 @@ use tower_http::trace::TraceLayer;
 use crate::routes::{health, webhook};
 
 pub use self::error::Error;
-pub use self::workflow::{Workflow, WorkflowError};
+pub use self::state::State;
+pub use self::workflow::{Step, Transition, Workflow, WorkflowError};
 
 mod auth;
 mod error;
 mod routes;
+mod state;
 mod workflow;
 
 type SharedTokenFactory = Arc<Mutex<TokenFactory>>;

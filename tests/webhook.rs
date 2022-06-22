@@ -44,8 +44,8 @@ async fn webhook_accepts_valid_signature() -> Result<(), Error> {
         .await?;
 
     assert_eq!(
-        "\"received unsupported event\"",
-        response.text().await.unwrap()
+        response.text().await.unwrap(),
+        "\"received unsupported event\""
     );
     Ok(())
 }
