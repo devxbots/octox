@@ -1,7 +1,8 @@
 use anyhow::Context;
 use async_trait::async_trait;
 use github_parts::event::Event;
-use github_parts::github::{AppId, GitHubHost, PrivateKey};
+use github_parts::github::app::AppId;
+use github_parts::github::{GitHubHost, PrivateKey};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
