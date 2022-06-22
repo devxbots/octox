@@ -6,9 +6,39 @@ use axum::response::{IntoResponse, Response};
 use github_parts::event::Event;
 use thiserror::Error;
 
+use crate::State;
+
 #[async_trait]
 pub trait Workflow: Debug + Sync + Send {
-    async fn process(&self, event: Event) -> Result<serde_json::Value, WorkflowError>;
+    fn initial_state(&self) -> State {
+        State::new()
+    }
+
+    fn initial_step(&self) -> Box<dyn Step>;
+
+    async fn execute(&self, event: Event) -> Result<serde_json::Value, WorkflowError> {
+        let mut step = self.initial_step();
+        let mut state = self.initial_state();
+
+        state.insert(event);
+
+        loop {
+            step = match step.next(&mut state).await? {
+                Transition::Next(step) => step,
+                Transition::Complete(result) => return Ok(result),
+            }
+        }
+    }
+}
+
+#[async_trait]
+pub trait Step: Send + Sync {
+    async fn next(self: Box<Self>, state: &mut State) -> Result<Transition, WorkflowError>;
+}
+
+pub enum Transition {
+    Next(Box<dyn Step>),
+    Complete(serde_json::Value),
 }
 
 #[derive(Debug, Error)]

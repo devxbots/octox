@@ -24,7 +24,7 @@ pub async fn webhook(
     let event_type = get_event(&headers)?;
     let event = deserialize_event(&event_type, &body)?;
 
-    let body = workflow.process(event).await?;
+    let body = workflow.execute(event).await?;
 
     Ok(Json(body))
 }

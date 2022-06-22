@@ -1,9 +1,9 @@
+use anyhow::Context;
 use async_trait::async_trait;
 use github_parts::event::Event;
 use github_parts::github::{AppId, GitHubHost, PrivateKey};
-use serde_json::Value;
 
-use octox::{Workflow, WorkflowError};
+use octox::{State, Step, Transition, Workflow, WorkflowError};
 
 #[derive(Debug)]
 pub struct HelloWorld;
@@ -20,7 +20,17 @@ impl HelloWorld {
 
 #[async_trait]
 impl Workflow for HelloWorld {
-    async fn process(&self, event: Event) -> Result<Value, WorkflowError> {
-        Ok(format!("received {}", event).into())
+    fn initial_step(&self) -> Box<dyn Step> {
+        Box::new(HelloWorldStep)
+    }
+}
+
+struct HelloWorldStep;
+
+#[async_trait]
+impl Step for HelloWorldStep {
+    async fn next(self: Box<Self>, state: &mut State) -> Result<Transition, WorkflowError> {
+        let event: &Event = state.get().context("failed to get event from state")?;
+        Ok(Transition::Complete(format!("received {}", event).into()))
     }
 }
