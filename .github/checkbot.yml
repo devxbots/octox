@@ -1,7 +1,7 @@
 ---
 version: 1
 
-required_checks:
+conditional_checks:
   - "Check style"
   - "Lint code"
   - "Run tests"
