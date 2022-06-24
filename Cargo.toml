@@ -27,7 +27,7 @@ publish = false
 name = "hello-world"
 
 [dependencies]
-github-parts = { git = "https://github.com/devxbots/github-parts", tag = "v0.8.2" }
+github-parts = { git = "https://github.com/devxbots/github-parts", tag = "v0.9.1" }
 
 anyhow = "1.0.57"
 async-trait = "0.1.56"
