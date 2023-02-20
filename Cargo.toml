@@ -31,7 +31,7 @@ github-parts = { git = "https://github.com/devxbots/github-parts", tag = "v0.10.
 
 anyhow = "1.0.57"
 async-trait = "0.1.56"
-axum = "0.5.6"
+axum = "0.6.7"
 chrono = "0.4.19"
 hex = "0.4.3"
 hmac = "0.12.1"
