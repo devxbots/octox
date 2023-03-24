@@ -1,17 +1,13 @@
 # 📥 octox
 
+![Maintenance](https://img.shields.io/maintenance/no/2023)
+
 _A tailor-made web framework for GitHub Apps._
 
 `octox` is a tailor-made and opinionated web framework to build GitHub Apps. It
 hides the complexity of receiving, verifying, and deserializing incoming
 webhooks. You only need to provide a function that runs your workflow, and
 deploy the project to get started.
-
-## Status
-
-We are actively developing `github-parts`. Its API and functionality are not
-stable and can change at any time. During this period, we don't accept code
-contributions to the project.
 
 ## License
 
